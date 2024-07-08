@@ -1,0 +1,128 @@
+﻿@page "/editBook"
+@inject BookManagerApp.Data.BookManagerAppContext DB
+@using BookManagerApp.Components.Models
+@inject NavigationManager NavigationManager
+@using Microsoft.EntityFrameworkCore
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using System.Security.Claims
+
+<PageTitle>図書編集</PageTitle>
+
+<h1>図書編集</h1>
+
+<h4>登録図書の情報を編集します。</h4>
+
+<AuthorizeView Context="AuthContext">
+    <Authorized>
+        <hr />
+        @if (Book is null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            <EditForm method="post" Model="Book" OnValidSubmit="UpdateBook" FormName="create" Enhance>
+                <DataAnnotationsValidator />
+                <div class="row mb-3">
+                    <label for="title" class="col-sm-2 col-form-label"><p>書籍名<span style="color:red">※</span></p></label>
+                    <div class="col-sm-5">
+                        <InputText id="title" @bind-Value="Book.Title" class="form-control" />
+                    </div>
+                    <ValidationMessage For="() => Book.Title" class="text-danger" />
+                </div>
+                <div class="row mb-3">
+                    <label for="author" class="col-sm-2 col-form-label"><p>著者<span style="color:red">※</span></p></label>
+                    <div class="col-sm-5">
+                        <InputText id="author" @bind-Value="Book.Author" class="form-control" />
+                    </div>
+                    <ValidationMessage For="() => Book.Title" class="text-danger" />
+                </div>
+                <div class="row mb-3">
+                    <label for="publisher" class="col-sm-2 col-form-label"><p>出版社<span style="color:red">※</span></p></label>
+                    <div class="col-sm-5">
+                        <InputText id="publisher" @bind-Value="Book.Publisher" class="form-control" />
+                    </div>
+                    <ValidationMessage For="() => Book.Title" class="text-danger" />
+                </div>
+                <br /> 
+                <div>
+                    <button type="submit" class="btn btn-primary">更新</button>
+                </div>
+            </EditForm>
+            <br />
+            <div>
+                <a class="btn btn-primary" href="@($"/findBooks")" >戻る</a>
+            </div>
+
+            
+        }
+    </Authorized>
+    <NotAuthorized>
+        ログインしてください
+    </NotAuthorized>
+</AuthorizeView>
+
+
+@code {
+    [SupplyParameterFromQuery]
+    public int BookId { get; set; }
+
+    [SupplyParameterFromForm]
+    public Book? Book { get; set; }
+
+    [CascadingParameter]
+    private HttpContext? httpContext{ get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Book ??= await DB.Book.FirstOrDefaultAsync(m => m.BookId == BookId);
+
+        if (Book is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more details, see https://aka.ms/RazorPagesCRUD.
+    public async Task UpdateBook()
+    {
+        DB.Attach(Book!).State = EntityState.Modified;
+
+        string userName = httpContext.User.Identity.Name;
+
+        Book.UpdateDate = DateTime.Now.ToString("yyyy/MM/dd HH:mm");
+        Book.UpdateUser = userName;
+
+        try
+        {
+            await DB.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!BookExists(Book!.BookId))
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        NavigationManager.NavigateTo("/findBooks");
+    }
+
+    bool BookExists(int bookid)
+    {
+        return DB.Book.Any(e => e.BookId == bookid);
+    }
+
+    private void NavigateToFindBooks()
+    {
+        
+    }
+
+}

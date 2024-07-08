@@ -1,0 +1,40 @@
+﻿@if (isShow)
+{
+    <div class="dialog-outer" @onclick="@(() => this.Close())">
+        <div class="dialog-content" @onclick:stopPropagation="true">
+            @ChildContent
+        </div>
+    </div>
+}
+
+
+@code {
+    [Parameter]
+    public RenderFragment ChildContent { get; set; } = null!;
+
+    private bool isShow;
+
+    public void Show()
+    {
+        this.isShow = true;
+        this.StateHasChanged();
+    }
+
+    public void Close()
+    {
+        this.isShow = false;
+        this.StateHasChanged();
+    }
+}
+
+@inherits AbstractDialog
+
+<TemplateDialog @ref="TemplateDialog">
+    <h2>ダイアログサンプル</h2>
+    <hr />
+    <hr />
+    <p>本日は晴天なり本日は晴天なり</p>
+    <p>あいうえおカキクケコ</p>
+
+    <button @onclick="()=> this.Close()">閉じる</button>
+</TemplateDialog>

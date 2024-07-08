@@ -1,0 +1,77 @@
+﻿@page "/registBook"
+@inject BookManagerApp.Data.BookManagerAppContext DB
+@using BookManagerApp.Components.Models
+@inject NavigationManager NavigationManager
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using System.Security.Claims
+
+<PageTitle>図書登録</PageTitle>
+
+<h1>図書登録</h1>
+
+<h4>新しく本を登録します。</h4>
+<hr />
+
+<AuthorizeView Context="authContext">
+    <Authorized>
+        <div>
+            <EditForm method="post" Model="Book" OnValidSubmit="AddBook" FormName="create" Enhance>
+                <DataAnnotationsValidator />
+                <div class="row mb-3">
+                    <label for="title" class="col-sm-2 col-form-label"><p>書籍名<span style="color:red">※</span></p></label>
+                    <div class="col-sm-5">
+                        <InputText id="title" @bind-Value="Book.Title" class="form-control" />
+                    </div>
+                    <ValidationMessage For="() => Book.Title" class="text-danger" />
+                </div>
+                <div class="row mb-3">
+                    <label for="author" class="col-sm-2 col-form-label"><p>著者<span style="color:red">※</span></p></label>
+                    <div class="col-sm-5">
+                        <InputText id="author" @bind-Value="Book.Author" class="form-control" />
+                    </div>
+                    <ValidationMessage For="() => Book.Title" class="text-danger" />
+                </div>
+                <div class="row mb-3">
+                    <label for="publisher" class="col-sm-2 col-form-label"><p>出版社<span style="color:red">※</span></p></label>
+                    <div class="col-sm-5">
+                        <InputText id="publisher" @bind-Value="Book.Publisher" class="form-control" />
+                    </div>
+                    <ValidationMessage For="() => Book.Title" class="text-danger" />
+                </div>
+                <br /> 
+                <div>
+                    <button type="submit" class="btn btn-primary">登録</button>
+                </div>
+            </EditForm>
+        </div>
+
+    </Authorized>
+    <NotAuthorized>
+        ログインしてください
+    </NotAuthorized>
+</AuthorizeView>
+
+
+@code {
+
+    [SupplyParameterFromForm]
+    public Book Book { get; set; } = new();
+
+    [CascadingParameter]
+    HttpContext? httpContext{ get; set; }
+
+    // To protect from overposting attacks, see https://aka.ms/RazorPagesCRUD
+    public async Task AddBook()
+    {
+        string userName = httpContext.User.Identity!.Name;
+
+        Book.RegistDate = DateTime.Now.ToString("yyyy/MM/dd HH:mm");
+        Book.RegistUser = userName;
+
+        DB.Book.Add(Book);
+        await DB.SaveChangesAsync();
+        NavigationManager.NavigateTo("/findBooks");
+    }
+}

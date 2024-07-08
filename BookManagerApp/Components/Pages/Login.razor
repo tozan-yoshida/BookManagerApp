@@ -1,0 +1,156 @@
+﻿@page "/"
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using System.Security.Claims
+@using System.DirectoryServices
+@using BookManagerApp.Components.Layout
+@using DirectoryEntry = System.DirectoryServices.DirectoryEntry;
+@inject NavigationManager NavigationManager
+@layout CustomLayout
+
+<PageTitle>ログイン</PageTitle>
+
+<EditForm EditContext="EditContext" FormName="login-form" OnValidSubmit="LoginAsync">
+    <DataAnnotationsValidator />
+    <p class="g-md-5" />
+    <br /><br /><br /><br /><br />
+    <div class="container">
+        <div class=" mb-3">
+            <p class="fsize">社内図書管理アプリ</p>
+            <label>
+                <InputText @bind-Value="Model.UserName" placeholder="ログインID" type="text" class="login"/>
+                <ValidationMessage For="() => Model.UserName" />
+            </label>
+        </div>
+        <div class="mb-3">
+            <label>
+                <InputText @bind-Value="Model.Password" type="password" placeholder="パスワード" class="login"/>
+                <ValidationMessage For="() => Model.Password" />
+            </label>
+        </div>
+        <ValidationSummary Model="Model" />
+        <div >
+            <button type="submit" class="login-button">ログイン</button>
+        </div>
+    </div>
+</EditForm>
+
+@* 
+<form method="post" @formname="logout">
+    <button type="submit" class="btn btn-primary">ログアウト</button>
+</form> *@
+
+@code {
+    [SupplyParameterFromForm]
+    private LoginForm Model { get; set; } = default!;
+    private EditContext EditContext { get; set; } = default!;
+    private ValidationMessageStore ValidationMessageStore { get; set; } = default!;
+
+    [CascadingParameter]
+    private HttpContext? HttpContext{ get; set; }
+
+    protected override void OnInitialized()
+    {
+        Model ??= new();
+        EditContext = new(Model);
+        ValidationMessageStore = new(EditContext);
+    }
+
+    private async Task LoginAsync(EditContext editContext)
+    {
+        try
+        {
+            _ = HttpContext ?? throw new InvalidOperationException("Static SSR で実行してください");
+
+            ClaimsIdentity? identity = null;
+
+            var authenticateUserName = AuthenticateUser(Model.UserName, Model.Password);
+
+            // 本来であればここでログイン処理をするような機能を呼び出す
+            if (!string.IsNullOrWhiteSpace(authenticateUserName))
+            {
+                identity = new(
+                    [new Claim(ClaimTypes.Name, authenticateUserName), new Claim(ClaimTypes.Role, "User")],
+                    CookieAuthenticationDefaults.AuthenticationScheme);
+            }
+
+            if (identity != null)
+            {
+                // ログイン成功
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(identity)
+                );
+                NavigationManager.NavigateTo("/home", forceLoad: true);
+            }
+            else
+            {
+                // ログイン失敗
+                ValidationMessageStore.Add(EditContext.Field(""), "名前かパスワードが間違っています");
+            }
+        }
+        catch (Exception e) when (e is not NavigationException)
+        {
+            string message = e.Message;
+        }
+    }
+
+    /// <summary>
+    /// アクティブディレクトリ ユーザーを認証
+    /// </summary>
+    /// <param name="username"></param>
+    /// <param name="password"></param>
+    /// <returns></returns>
+    public string AuthenticateUser(string username, string password)
+    {
+        try
+        {
+            // Active Directory サーバーの DirectoryEntry オブジェクトを作成
+            string domain = "LDAP://192.168.1.6/DC=tozan,DC=co,DC=jp";
+            DirectoryEntry root1 = new DirectoryEntry(domain, username, password);
+
+            // Active Directory でユーザーを検索
+            DirectorySearcher searcher = new DirectorySearcher(root1);
+            searcher.Filter = "(&(objectClass=user)(sAMAccountName=" + username + "))";
+            searcher.SearchScope = SearchScope.Subtree;
+
+            // ユーザーが見つかったかどうかを確認
+            SearchResult result = searcher.FindOne();
+
+            if (result != null)
+            {
+                //名前（name）を取得する
+                string name = result.Properties["displayname"][0].ToString();
+                return name;
+            }
+            else
+            {
+                return null;
+            }
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+
+    private async Task PostLogoutAsync()
+    {
+        _ = HttpContext ?? throw new InvalidOperationException("Static SSR で実行してください");
+
+        await HttpContext.SignOutAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme
+        );
+        NavigationManager.NavigateTo("/");
+    }
+
+    class LoginForm
+    {
+        [Required(ErrorMessage = "ユーザー名を入力してください")]
+        public string UserName { get; set; } = "";
+        [Required(ErrorMessage = "パスワードを入力してください")]
+        public string Password { get; set; } = "";
+    }
+}

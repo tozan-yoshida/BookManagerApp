@@ -1,0 +1,57 @@
+﻿@page "/books/details"
+@inject BookManagerApp.Data.BookManagerAppContext DB
+@using BookManagerApp.Components.Models
+@inject NavigationManager NavigationManager
+@using Microsoft.EntityFrameworkCore
+
+<PageTitle>Details</PageTitle>
+
+<h1>Details</h1>
+
+<div>
+    <h4>Book</h4>
+    <hr />
+    @if (book is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else {
+        <dl class="row">
+            <dt class="col-sm-2">Title</dt>
+            <dd class="col-sm-10">@book.Title</dd>
+            <dt class="col-sm-2">Author</dt>
+            <dd class="col-sm-10">@book.Author</dd>
+            <dt class="col-sm-2">Publisher</dt>
+            <dd class="col-sm-10">@book.Publisher</dd>
+            <dt class="col-sm-2">RegistDate</dt>
+            <dd class="col-sm-10">@book.RegistDate</dd>
+            <dt class="col-sm-2">RegistUser</dt>
+            <dd class="col-sm-10">@book.RegistUser</dd>
+            <dt class="col-sm-2">UpdateDate</dt>
+            <dd class="col-sm-10">@book.UpdateDate</dd>
+            <dt class="col-sm-2">UpdateUser</dt>
+            <dd class="col-sm-10">@book.UpdateUser</dd>
+        </dl>
+        <div>
+            <a href="@($"/books/edit?bookid={book.BookId}")">Edit</a> |
+            <a href="@($"/books")">Back to List</a>
+        </div>
+    }
+</div>
+
+@code {
+    Book? book;
+
+    [SupplyParameterFromQuery]
+    public int BookId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        book = await DB.Book.FirstOrDefaultAsync(m => m.BookId == BookId);
+
+        if (book is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+}

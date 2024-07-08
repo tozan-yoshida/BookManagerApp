@@ -1,0 +1,70 @@
+﻿@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Microsoft.AspNetCore.Mvc.RazorPages
+@using Microsoft.AspNetCore.Mvc
+@using System.Threading.Tasks
+@inject NavigationManager NavigationManager
+
+@page "/logout"
+
+<PageTitle>ログアウト</PageTitle>
+
+<h3>ログアウト</h3>
+<hr />
+<form method="post" @formname="logout" @onsubmit="OnPostAsync">
+    
+    <button type="submit" class="btn btn-primary" >ログアウト</button>
+</form>
+
+<ConfirmDialog @ref="confirmation"
+               Title="確認"
+               Message="ログアウトしますか?"
+               OKButtonCaption="はい"
+               CancelButtonCaption="いいえ"
+               ActionSelected="ActionSelected">
+</ConfirmDialog>
+
+
+@code {
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private EditContext EditContext = default!;
+    private ConfirmDialog confirmation;
+
+    private async Task OnPostAsync()
+    {
+        _ = HttpContext ?? throw new InvalidOperationException("Static SSR で実行してください");
+
+        await HttpContext.SignOutAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme
+        );
+        NavigationManager.NavigateTo($"/");
+    }
+
+    private async Task ActionSelected(bool dialogResult)
+    {
+        try
+        {
+            if (!dialogResult)
+                return;
+
+            _ = HttpContext ?? throw new InvalidOperationException("Static SSR で実行してください");
+
+            await HttpContext.SignOutAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme
+            );
+            NavigationManager.NavigateTo($"/");
+        }
+        catch (Exception e)
+        {
+
+        }
+    }
+
+    private async Task showDialog()
+    {
+        await confirmation.ShowDialog();
+    }
+}

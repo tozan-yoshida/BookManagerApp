@@ -1,0 +1,83 @@
+﻿@inherits LayoutComponentBase
+@using BookManagerApp.Components.Pages
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Microsoft.AspNetCore.Mvc.RazorPages
+@using Microsoft.AspNetCore.Mvc
+@using System.Threading.Tasks
+@inject NavigationManager NavigationManager
+
+<div class="page">    
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4">
+            <AuthorizeView Context="AuthContext">
+                <Authorized>
+                    <div class="p-3">
+                    @HttpContext.User.Identity!.Name
+                    </div>
+                    <form method="post" @formname="logout" @onsubmit="LogoutAsync">
+                        <button type="submit" class="btn btn-primary">ログアウト</button>
+                    </form>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="">ログイン</a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+<ConfirmDialog @ref="confirmation"
+               Title="確認"
+               Message="ログアウトしますか?"
+               OKButtonCaption="はい"
+               CancelButtonCaption="いいえ"
+               ActionSelected="ActionSelected">
+</ConfirmDialog>
+
+@code{
+    private ConfirmDialog confirmation;
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+
+    private EditContext EditContext = default!;
+
+    private async Task showDialog()
+    {
+        await confirmation.ShowDialog();
+    }
+
+    private async Task ActionSelected(bool dialogResult)
+    {
+        if (!dialogResult)
+            return;
+
+        await LogoutAsync();
+    }
+
+    private async Task LogoutAsync()
+    {
+        _ = HttpContext ?? throw new InvalidOperationException("Static SSR で実行してください");
+
+        await HttpContext.SignOutAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme
+        );
+        NavigationManager.NavigateTo($"/");
+    }
+}

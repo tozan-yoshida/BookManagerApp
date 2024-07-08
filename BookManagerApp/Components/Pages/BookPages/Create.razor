@@ -1,0 +1,73 @@
+﻿@page "/books/create"
+@inject BookManagerApp.Data.BookManagerAppContext DB
+@using BookManagerApp.Components.Models
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create</PageTitle>
+
+<h1>Create</h1>
+
+<h4>Book</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="Book" OnValidSubmit="AddBook" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" />
+            <div class="mb-3">
+                <label for="title" class="form-label">Title:</label> 
+                <InputText id="title" @bind-Value="Book.Title" class="form-control" /> 
+                <ValidationMessage For="() => Book.Title" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="author" class="form-label">Author:</label> 
+                <InputText id="author" @bind-Value="Book.Author" class="form-control" /> 
+                <ValidationMessage For="() => Book.Author" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="publisher" class="form-label">Publisher:</label> 
+                <InputText id="publisher" @bind-Value="Book.Publisher" class="form-control" /> 
+                <ValidationMessage For="() => Book.Publisher" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="registdate" class="form-label">RegistDate:</label> 
+                <InputText id="registdate" @bind-Value="Book.RegistDate" class="form-control" /> 
+                <ValidationMessage For="() => Book.RegistDate" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="registuser" class="form-label">RegistUser:</label> 
+                <InputText id="registuser" @bind-Value="Book.RegistUser" class="form-control" /> 
+                <ValidationMessage For="() => Book.RegistUser" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="updatedate" class="form-label">UpdateDate:</label> 
+                <InputText id="updatedate" @bind-Value="Book.UpdateDate" class="form-control" /> 
+                <ValidationMessage For="() => Book.UpdateDate" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="updateuser" class="form-label">UpdateUser:</label> 
+                <InputText id="updateuser" @bind-Value="Book.UpdateUser" class="form-control" /> 
+                <ValidationMessage For="() => Book.UpdateUser" class="text-danger" /> 
+            </div>        
+            <button type="submit" class="btn btn-primary">Create</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/books">Back to List</a>
+</div>
+
+@code {
+
+    [SupplyParameterFromForm]
+    public Book Book { get; set; } = new();
+
+    // To protect from overposting attacks, see https://aka.ms/RazorPagesCRUD
+    public async Task AddBook()
+    {
+        DB.Book.Add(Book);
+        await DB.SaveChangesAsync();
+        NavigationManager.NavigateTo("/books");
+    }
+}

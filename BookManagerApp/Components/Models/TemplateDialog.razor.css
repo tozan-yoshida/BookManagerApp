@@ -1,0 +1,18 @@
+﻿.dialog-outer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(75, 85, 99, 0.8);
+}
+
+.dialog-content {
+    max-height: 90vh;
+    max-width: 90vh;
+    overflow: auto;
+    background-color: white;
+}
